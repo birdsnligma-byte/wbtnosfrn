@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WilliamHub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:       #111;
+    --surface:  #1a1a1a;
+    --card:     #1e1e1e;
+    --border:   #2a2a2a;
+    --accent:   #e05a00;
+    --text:     #e8e8e8;
+    --muted:    #777;
+    --star-on:  #e09000;
+    --star-off: #3a3a3a;
+    --radius:   6px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── WARNING ── */
+  #warning-overlay {
+    position: fixed; inset: 0;
+    background: #0a0a0a;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+  .warn-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 44px 48px;
+    max-width: 420px; width: 90%;
+    text-align: center;
+  }
+  .warn-box h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 16px; }
+  .warn-box p  { font-size: 0.95rem; color: #aaa; line-height: 1.7; margin-bottom: 28px; }
+  .warn-buttons { display: flex; gap: 12px; justify-content: center; }
+  .btn-yes, .btn-no {
+    padding: 10px 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn-yes { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-yes:hover { background: #c04e00; border-color: #c04e00; }
+  .btn-no  { background: transparent; color: var(--muted); }
+  .btn-no:hover { background: #2a2a2a; color: var(--text); }
+
+  /* ── HEADER (untouched) ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-size: 1.3rem; font-weight: 700; color: var(--text); cursor: pointer; }
+  .logo span { color: var(--accent); }
+  .header-sub { font-size: 0.78rem; color: var(--muted); }
+
+  /* ── PAGES ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── BROWSE PAGE ── */
+  #page-browse { }
+
+  .hero {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 28px;
+  }
+  .hero h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 5px; }
+  .hero p   { color: var(--muted); font-size: 0.88rem; }
+
+  .browse-main { max-width: 1280px; margin: 0 auto; padding: 32px 24px 60px; }
+
+  .section-label {
+    font-size: 0.72rem; font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 18px;
+  }
+
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  .video-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden; cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .video-card:hover { border-color: #444; }
+
+  .thumb-wrap {
+    width: 100%; aspect-ratio: 16/9;
+    background: #0d0d0d;
+    position: relative; overflow: hidden;
+  }
+  .thumb-wrap video {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block; pointer-events: none;
+  }
+  .play-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.38);
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .video-card:hover .play-overlay { opacity: 1; }
+  .play-icon {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 0.95rem; padding-left: 3px;
+  }
+  .card-title {
+    padding: 10px 12px 12px;
+    font-weight: 600; font-size: 0.88rem;
+    color: var(--text); line-height: 1.35;
+  }
+
+  /* ── PLAYER PAGE ── */
+  #page-player { }
+
+  .player-layout {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px 24px 60px;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Left column */
+  .player-left { min-width: 0; }
+
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); font-family: 'Inter', sans-serif;
+    font-size: 0.82rem; padding: 6px 14px;
+    border-radius: var(--radius); cursor: pointer;
+    margin-bottom: 16px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .back-btn:hover { border-color: #555; color: var(--text); }
+
+  /* Video container — supports browser fullscreen natively */
+  .player-video-wrap {
+    width: 100%;
+    background: #000;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  #player-video {
+    width: 100%;
+    aspect-ratio: 16/9;
+    display: block;
+    background: #000;
+  }
+
+  .player-info {
+    margin-top: 16px;
+    padding: 16px 0 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .player-title {
+    font-size: 1.15rem; font-weight: 700;
+    color: var(--text); margin-bottom: 10px;
+    line-height: 1.35;
+  }
+
+  .player-desc {
+    font-size: 0.86rem; color: var(--muted);
+    line-height: 1.65; margin-bottom: 16px;
+  }
+
+  /* Stars */
+  .stars { display: flex; gap: 3px; align-items: center; }
+  .star {
+    font-size: 1.3rem; cursor: pointer;
+    color: var(--star-off);
+    transition: color 0.1s;
+    user-select: none; line-height: 1;
+  }
+  .star:hover, .star.filled { color: var(--star-on); }
+  .rating-label { font-size: 0.75rem; color: var(--muted); margin-left: 6px; }
+
+  /* Right column — similar */
+  .similar-col { }
+
+  .similar-label {
+    font-size: 0.72rem; font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .similar-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .similar-card {
+    display: flex; gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden; cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .similar-card:hover { border-color: #444; }
+
+  .similar-thumb {
+    width: 120px; flex-shrink: 0;
+    aspect-ratio: 16/9;
+    background: #0d0d0d;
+    overflow: hidden; position: relative;
+  }
+  .similar-thumb video {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block; pointer-events: none;
+  }
+  .similar-info {
+    padding: 8px 10px;
+    display: flex; flex-direction: column; justify-content: center;
+    min-width: 0;
+  }
+  .similar-title {
+    font-size: 0.82rem; font-weight: 600;
+    color: var(--text); line-height: 1.3;
+    margin-bottom: 4px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .similar-desc-preview {
+    font-size: 0.74rem; color: var(--muted);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.4;
+  }
+
+  .no-similar {
+    font-size: 0.82rem; color: var(--muted);
+    padding: 12px 0;
+  }
+
+  /* LOADING / EMPTY */
+  .loading, .empty-state {
+    text-align: center; padding: 60px 20px;
+    color: var(--muted); font-size: 0.9rem;
+  }
+  .loading-spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* FOOTER */
+  footer {
+    text-align: center; padding: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 0.78rem;
+  }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text); padding: 10px 22px;
+    border-radius: var(--radius); font-size: 0.85rem;
+    z-index: 9000;
+    transition: transform 0.25s ease, opacity 0.25s;
+    opacity: 0; pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .player-layout {
+      grid-template-columns: 1fr;
+    }
+    .similar-col { border-top: 1px solid var(--border); padding-top: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- WARNING -->
+<div id="warning-overlay">
+  <div class="warn-box">
+    <h1>Warning</h1>
+    <p>You may die of laughter.<br/><br/>Are you sure you wanna continue?</p>
+    <div class="warn-buttons">
+      <button class="btn-yes" onclick="enterSite()">YES</button>
+      <button class="btn-no" onclick="noBtnClicked()">NO</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER (untouched) -->
+<header>
+  <div class="logo" onclick="showBrowse()">William<span>Hub</span></div>
+  <div class="header-sub">William Archives, Funny Stuff</div>
+</header>
+
+<!-- BROWSE PAGE -->
+<div id="page-browse" class="page active">
+  <div class="hero">
+    <h2>William's beste og smarteste ting</h2>
+    <p>Collection af Willams, catch them all!</p>
+  </div>
+  <div class="browse-main">
+    <div class="section-label">Nyeste Clips</div>
+    <div class="video-grid" id="video-grid">
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        Loading clips...
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER PAGE -->
+<div id="page-player" class="page">
+  <div class="player-layout">
+    <div class="player-left">
+      <button class="back-btn" onclick="showBrowse()">&#8592; All clips</button>
+      <div class="player-video-wrap">
+        <video id="player-video" controls></video>
+      </div>
+      <div class="player-info">
+        <div class="player-title" id="player-title"></div>
+        <div class="player-desc"  id="player-desc"></div>
+        <div class="stars"        id="player-stars"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: similar -->
+    <div class="similar-col">
+      <div class="similar-label">Similar</div>
+      <div class="similar-list" id="similar-list"></div>
+    </div>
+  </div>
+</div>
+
+<footer>&copy; 2025 WilliamHub &mdash; No Williams were seriously harmed. Probably.</footer>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──
+let allVideos = [];
+let currentVN = null;
+
+// ── RATINGS ──
+function getRating(vn) {
+  return parseInt(localStorage.getItem('wh_' + vn) || '0', 10);
+}
+function setRating(vn, n) {
+  localStorage.setItem('wh_' + vn, n);
+}
+
+function buildStars(container, vn) {
+  container.innerHTML = '';
+  const cur = getRating(vn);
+  for (let i = 1; i <= 5; i++) {
+    const s = document.createElement('span');
+    s.className = 'star' + (i <= cur ? ' filled' : '');
+    s.textContent = '★';
+    s.addEventListener('click', () => {
+      setRating(vn, i);
+      buildStars(container, vn);
+      showToast(`Rated ${i}/5`);
+    });
+    s.addEventListener('mouseover', () => {
+      [...container.querySelectorAll('.star')].forEach((st, idx) =>
+        st.style.color = idx < i ? 'var(--star-on)' : 'var(--star-off)');
+    });
+    s.addEventListener('mouseleave', () => {
+      [...container.querySelectorAll('.star')].forEach((st, idx) =>
+        st.style.color = idx < getRating(vn) ? 'var(--star-on)' : 'var(--star-off)');
+    });
+    container.appendChild(s);
+  }
+  const lbl = document.createElement('span');
+  lbl.className = 'rating-label';
+  lbl.textContent = getRating(vn) ? `${getRating(vn)}/5` : 'Not rated';
+  container.appendChild(lbl);
+}
+
+// ── TOAST ──
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── SIMILARITY ──
+// Tokenise a string into lowercase words, ignoring short/common words
+function tokenise(str) {
+  const stop = new Set(['a','an','the','and','of','in','on','at','to','is','it',
+    'he','his','for','was','with','this','that','are','be','by','as','or','but']);
+  return str.toLowerCase()
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !stop.has(w));
+}
+
+function similarity(a, b) {
+  const ta = new Set(tokenise(a.Title + ' ' + a.Description));
+  const tb = new Set(tokenise(b.Title + ' ' + b.Description));
+  let shared = 0;
+  ta.forEach(w => { if (tb.has(w)) shared++; });
+  return shared / Math.max(1, Math.sqrt(ta.size * tb.size));
+}
+
+function getSimilar(current, all, n = 5) {
+  return all
+    .filter(v => v.VN !== current.VN)
+    .map(v => ({ data: v, score: similarity(current, v) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, n)
+    .map(x => x.data);
+}
+
+// ── PAGES ──
+function showBrowse() {
+  const vid = document.getElementById('player-video');
+  vid.pause(); vid.src = '';
+  document.getElementById('page-browse').classList.add('active');
+  document.getElementById('page-player').classList.remove('active');
+  currentVN = null;
+}
+
+function openPlayer(data) {
+  currentVN = data.VN;
+  document.getElementById('page-browse').classList.remove('active');
+  document.getElementById('page-player').classList.add('active');
+
+  const vid = document.getElementById('player-video');
+  vid.src = `Videos/${data.VN}`;
+  vid.play().catch(() => {});
+
+  document.getElementById('player-title').textContent = data.Title;
+  document.getElementById('player-desc').textContent  = data.Description;
+  buildStars(document.getElementById('player-stars'), data.VN);
+
+  // Similar section
+  const list = document.getElementById('similar-list');
+  list.innerHTML = '';
+  const sim = getSimilar(data, allVideos);
+
+  if (!sim.length) {
+    list.innerHTML = '<div class="no-similar">No similar clips found.</div>';
+    return;
+  }
+
+  sim.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'similar-card';
+    card.innerHTML = `
+      <div class="similar-thumb">
+        <video src="Videos/${s.VN}" preload="metadata" muted></video>
+      </div>
+      <div class="similar-info">
+        <div class="similar-title">${s.Title}</div>
+        <div class="similar-desc-preview">${s.Description}</div>
+      </div>
+    `;
+    card.addEventListener('click', () => openPlayer(s));
+    list.appendChild(card);
+  });
+
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── WARNING ──
+function enterSite() {
+  document.getElementById('warning-overlay').style.display = 'none';
+  loadVideos();
+}
+function noBtnClicked() {
+  alert("Too bad, you're still getting in");
+  enterSite();
+}
+
+// ── LOAD VIDEOS ──
+async function loadVideos() {
+  const grid = document.getElementById('video-grid');
+  let files = [];
+  try {
+    const r = await fetch('./JSON/manifest.json');
+    if (r.ok) files = await r.json();
+  } catch(e) {}
+
+  if (!files.length) {
+    grid.innerHTML = '<div class="empty-state">No videos found.<br/>Add JSON files to JSON/ and videos to Videos/</div>';
+    return;
+  }
+
+  const results = await Promise.all(files.map(async fname => {
+    try { const r = await fetch(`JSON/${fname}`); return r.ok ? r.json() : null; }
+    catch { return null; }
+  }));
+
+  allVideos = results.filter(Boolean);
+  if (!allVideos.length) {
+    grid.innerHTML = '<div class="empty-state">No valid metadata found.</div>';
+    return;
+  }
+
+  grid.innerHTML = '';
+  allVideos.forEach(data => {
+    const card = document.createElement('div');
+    card.className = 'video-card';
+    card.innerHTML = `
+      <div class="thumb-wrap">
+        <video src="Videos/${data.VN}" preload="metadata" muted></video>
+        <div class="play-overlay"><div class="play-icon">&#9654;</div></div>
+      </div>
+      <div class="card-title">${data.Title}</div>
+    `;
+    card.addEventListener('click', () => openPlayer(data));
+    grid.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>
